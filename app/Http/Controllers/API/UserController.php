@@ -19,10 +19,7 @@ class UserController extends Controller
         $perPage = $request->input('per_page', 10);
         $users = User::paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $users
-        ], 200);
+        return response()->json($users, 200);
     }
 
     /**
@@ -31,7 +28,7 @@ class UserController extends Controller
     public function search(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|min:2',
+            'query' => 'required|string|min:2',
         ]);
 
         if ($validator->fails()) {
@@ -41,16 +38,12 @@ class UserController extends Controller
             ], 422);
         }
 
-        $searchTerm = $request->input('name');
+        $searchTerm = $request->input('query');
         $users = User::where('name', 'LIKE', "%{$searchTerm}%")
             ->orWhere('email', 'LIKE', "%{$searchTerm}%")
-            ->paginate(10);
+            ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $users,
-            'search_term' => $searchTerm
-        ], 200);
+        return response()->json($users, 200);
     }
 
     /**
@@ -193,11 +186,12 @@ class UserController extends Controller
             ], 404);
         }
 
-        // Vérifier que l'utilisateur connecté supprime son propre compte
-        if (Auth::guard('api')->id() !== $user->id) {
+        // Empêcher l'utilisateur de supprimer son propre compte via cette route
+        // Pour supprimer son propre compte, l'utilisateur devrait utiliser une route dédiée
+        if (Auth::guard('api')->id() === $user->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized to delete this user'
+                'message' => 'You cannot delete your own account from this endpoint. Please use the profile deletion endpoint.'
             ], 403);
         }
 
@@ -206,6 +200,33 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User deleted successfully'
+        ], 200);
+    }
+
+    /**
+     * Supprimer son propre compte (profil)
+     */
+    public function deleteOwnAccount()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::guard('api')->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        // Déconnecter l'utilisateur avant de supprimer le compte
+        Auth::guard('api')->logout();
+
+        // Supprimer le compte
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your account has been deleted successfully'
         ], 200);
     }
 

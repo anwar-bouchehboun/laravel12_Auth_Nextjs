@@ -29,7 +29,10 @@ class AuthController extends Controller
             'password' => bcrypt($request->password),
         ]);
 
-        return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
+        // Générer un token JWT pour l'utilisateur nouvellement inscrit
+        $token = Auth::guard('api')->login($user);
+
+        return $this->respondWithToken($token);
     }
 
     // Login user and return JWT token
@@ -85,6 +88,7 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type'   => 'bearer',
             'expires_in'   => config('jwt.ttl') * 60,
+            'user'         => Auth::guard('api')->user(),
         ]);
     }
 }

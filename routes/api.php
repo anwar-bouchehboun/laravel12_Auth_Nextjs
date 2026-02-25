@@ -26,15 +26,18 @@ Route::middleware('auth:api')->prefix('users')->group(function () {
     // Statistiques des utilisateurs
     Route::get('/statistics', [UserController::class, 'statistics']);
 
+    // Modifier le mot de passe
+    Route::post('/change-password', [UserController::class, 'updatePassword']);
+
+    // Supprimer son propre compte
+    Route::delete('/profile/delete', [UserController::class, 'deleteOwnAccount']);
+
     // Afficher un utilisateur spécifique
     Route::get('/{id}', [UserController::class, 'show']);
 
     // Mettre à jour un utilisateur
     Route::put('/{id}', [UserController::class, 'update']);
 
-    // Modifier le mot de passe
-    Route::post('/change-password', [UserController::class, 'updatePassword']);
-
-    // Supprimer un utilisateur
+    // Supprimer un utilisateur (admin)
     Route::delete('/{id}', [UserController::class, 'destroy']);
 });
